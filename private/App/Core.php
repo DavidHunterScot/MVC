@@ -7,6 +7,15 @@ require_once "../private/App/Controller.php";
 require_once "../private/App/Config/Routing.php";
 require_once "../private/App/Exception/RouteNotFoundException.php";
 require_once "../private/App/Exception/ViewNotFoundException.php";
+require_once "../private/App/Exception/MissingControllerException.php";
+require_once "../private/App/Exception/MissingControllerMethodException.php";
+require_once "../private/App/Exception/InvalidControllerException.php";
+
+use \App\Exception\RouteNotFoundException;
+use \App\Exception\ViewNotFoundException;
+use \App\Exception\MissingControllerException;
+use \App\Exception\MissingControllerMethodException;
+use \App\Exception\InvalidControllerException;
 
 class Core {
 
@@ -39,7 +48,7 @@ class Core {
 
 			// Check if a valid controller file is missing and throw exception.
 			if(!file_exists("../private/App/Controllers/" . $controller . ".php")) {
-				throw new \App\Exception\MissingControllerException($controller);
+				throw new MissingControllerException($controller);
 			}
 
 			// Require in the controller class file.
@@ -51,15 +60,20 @@ class Core {
 			// Reuse $controller variable and create instance of controller class.
 			$controller = new $controller();
 
+			// Check if Controller instance is not a valid Controller.
+			if(!is_subclass_of($controller, '\\App\\Controller')) {
+				throw new InvalidControllerException(get_class($controller) . " is not a valid Controller instance! (Hint: extends Controller)");
+			}
+
 			// Check if the action method is missing from the controller class and throw exception.
 			if(!method_exists($controller, $method)) {
-				throw new \App\Exception\MissingControllerMethodException($method);
+				throw new MissingControllerMethodException($method);
 			}
 
 			// Call action method.
 			call_user_func([$controller, $method]);
 		} else {
-			throw new \App\Exception\RouteNotFoundException();
+			throw new RouteNotFoundException();
 		}
 	}
 
